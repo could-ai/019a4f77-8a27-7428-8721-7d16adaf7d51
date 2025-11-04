@@ -1,120 +1,227 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const MosiTradeApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MosiTradeApp extends StatelessWidget {
+  const MosiTradeApp({Key? key}) : super(key: key);
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'mositrade',
       debugShowCheckedModeBanner: false,
+      locale: const Locale('fa'),
+      supportedLocales: const [Locale('fa')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const EntryListPage(),
+      routes: {
+        '/': (context) => const EntryListPage(),
+      },
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class JournalEntry {
+  final DateTime date;
+  final String symbol;
+  final double amount;
+  final double price;
+  final String notes;
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  JournalEntry({
+    required this.date,
+    required this.symbol,
+    required this.amount,
+    required this.price,
+    required this.notes,
+  });
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class EntryListPage extends StatefulWidget {
+  const EntryListPage({Key? key}) : super(key: key);
 
-  void _incrementCounter() {
+  @override
+  _EntryListPageState createState() => _EntryListPageState();
+}
+
+class _EntryListPageState extends State<EntryListPage> {
+  final List<JournalEntry> _entries = [];
+
+  void _addEntry(JournalEntry entry) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _entries.add(entry);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text('mositrade - ژورنال معاملات کریپتو'),
+        centerTitle: true,
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text('$_counter', style: Theme.of(context).textTheme.headlineMedium),
-          ],
+      body: _entries.isEmpty
+          ? const Center(
+              child: Text('هیچ ورودی‌ای وجود ندارد. برای افزودن، دکمه + را فشار دهید.'),
+            )
+          : ListView.builder(
+              itemCount: _entries.length,
+              itemBuilder: (context, index) {
+                final entry = _entries[index];
+                return ListTile(
+                  title: Text('${entry.symbol} - ${entry.amount}'),
+                  subtitle: Text(
+                      'تاریخ: ${entry.date.toLocal().toString().split(' ')[0]} | قیمت: ${entry.price}'),
+                  onTap: () => _showEntryDetails(entry),
+                );
+              },
+            ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.push<JournalEntry>(
+            context,
+            MaterialPageRoute(builder: (context) => const AddEntryPage()),
+          );
+          if (result != null) {
+            _addEntry(result);
+          }
+        },
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  void _showEntryDetails(JournalEntry entry) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('${entry.symbol} - جزئیات'),
+        content: Text(
+          'تاریخ: ${entry.date.toLocal().toString().split(' ')[0]}
+مقدار: ${entry.amount}
+قیمت: ${entry.price}
+یادداشت: ${entry.notes}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('بستن'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class AddEntryPage extends StatefulWidget {
+  const AddEntryPage({Key? key}) : super(key: key);
+
+  @override
+  _AddEntryPageState createState() => _AddEntryPageState();
+}
+
+class _AddEntryPageState extends State<AddEntryPage> {
+  final _formKey = GlobalKey<FormState>();
+  DateTime _selectedDate = DateTime.now();
+  final _symbolController = TextEditingController();
+  final _amountController = TextEditingController();
+  final _priceController = TextEditingController();
+  final _notesController = TextEditingController();
+
+  Future<void> _pickDate() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2009),
+      lastDate: DateTime.now(),
+      locale: const Locale('fa'),
+    );
+    if (date != null) {
+      setState(() {
+        _selectedDate = date;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('افزودن ورودی جدید'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextButton(
+                  onPressed: _pickDate,
+                  child: Text('تاریخ: ${_selectedDate.toLocal().toString().split(' ')[0]}'),
+                ),
+                TextFormField(
+                  controller: _symbolController,
+                  decoration: const InputDecoration(labelText: 'نماد (مثلاً BTC)'),
+                  validator: (value) => value == null || value.isEmpty ? 'لطفاً نماد را وارد کنید' : null,
+                ),
+                TextFormField(
+                  controller: _amountController,
+                  decoration: const InputDecoration(labelText: 'مقدار'),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'لطفاً مقدار را وارد کنید';
+                    if (double.tryParse(value) == null) return 'عدد معتبر وارد کنید';
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: _priceController,
+                  decoration: const InputDecoration(labelText: 'قیمت'),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'لطفاً قیمت را وارد کنید';
+                    if (double.tryParse(value) == null) return 'عدد معتبر وارد کنید';
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: _notesController,
+                  decoration: const InputDecoration(labelText: 'یادداشت'),
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      final entry = JournalEntry(
+                        date: _selectedDate,
+                        symbol: _symbolController.text.trim(),
+                        amount: double.parse(_amountController.text.trim()),
+                        price: double.parse(_priceController.text.trim()),
+                        notes: _notesController.text.trim(),
+                      );
+                      Navigator.pop(context, entry);
+                    }
+                  },
+                  child: const Text('ذخیره'),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
