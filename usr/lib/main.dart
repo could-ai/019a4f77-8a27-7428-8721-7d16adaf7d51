@@ -107,10 +107,10 @@ class _EntryListPageState extends State<EntryListPage> {
       builder: (context) => AlertDialog(
         title: Text('${entry.symbol} - جزئیات'),
         content: Text(
-          'تاریخ: ${entry.date.toLocal().toString().split(' ')[0]}
+          '''تاریخ: ${entry.date.toLocal().toString().split(' ')[0]}
 مقدار: ${entry.amount}
 قیمت: ${entry.price}
-یادداشت: ${entry.notes}',
+یادداشت: ${entry.notes}''',
         ),
         actions: [
           TextButton(
